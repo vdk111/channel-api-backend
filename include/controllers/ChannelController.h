@@ -1,115 +1,98 @@
-#ifndef CHANNEL_CONTROLLER_H                         // Prevent repeated inclusion.
-#define CHANNEL_CONTROLLER_H                         // Define the header guard.
+#ifndef CHANNEL_CONTROLLER_H
+#define CHANNEL_CONTROLLER_H
 
-#include <drogon/HttpController.h>                   // Include Drogon controller support.
+#include <drogon/HttpController.h>
+#include <functional>
 
-class ChannelController                            // Declare the channel API controller.
-    : public drogon::HttpController<ChannelController> // Register it as a Drogon controller.
+// Drogon automatically registers this controller's routes.
+class ChannelController : public drogon::HttpController<ChannelController>
 {
-public:                                               // Expose the controller methods.
-    METHOD_LIST_BEGIN                                 // Begin declaring HTTP routes.
+public:
+    METHOD_LIST_BEGIN
 
-    ADD_METHOD_TO(                                    // Register the POST endpoint.
-        ChannelController::createChannelInfo,         // Handler function.
-        "/createChannelInfo",                         // API path.
-        drogon::Post                                  // Accepted HTTP method.
+    // Register POST /createChannelInfo.
+    METHOD_ADD(
+        ChannelController::createChannelInfo,
+        "/createChannelInfo",
+        drogon::Post
     );
 
-    ADD_METHOD_TO(                                    // Register GET for method rejection.
-        ChannelController::createChannelInfo,         // Reuse the same handler.
-        "/createChannelInfo",                         // Use the same API path.
-        drogon::Get                                   // HTTP GET method.
+    METHOD_LIST_END
+
+    // Handle requests sent to POST /createChannelInfo.
+    void createChannelInfo(
+        const drogon::HttpRequestPtr &request,
+        std::function<void(const drogon::HttpResponsePtr &)> &&callback
     );
+};
 
-    ADD_METHOD_TO(                                    // Register PUT for method rejection.
-        ChannelController::createChannelInfo,         // Reuse the same handler.
-        "/createChannelInfo",                         // Use the same API path.
-        drogon::Put                                   // HTTP PUT method.
-    );
+// Load and verify the OnnetJsonParser schema.
+void initializeChannelSchemas();
 
-    ADD_METHOD_TO(                                    // Register DELETE for method rejection.
-        ChannelController::createChannelInfo,         // Reuse the same handler.
-        "/createChannelInfo",                         // Use the same API path.
-        drogon::Delete                                // HTTP DELETE method.
-    );
-
-    ADD_METHOD_TO(                                    // Register PATCH for method rejection.
-        ChannelController::createChannelInfo,         // Reuse the same handler.
-        "/createChannelInfo",                         // Use the same API path.
-        drogon::Patch                                 // HTTP PATCH method.
-    );
-
-    ADD_METHOD_TO(                                    // Register HEAD for method rejection.
-        ChannelController::createChannelInfo,         // Reuse the same handler.
-        "/createChannelInfo",                         // Use the same API path.
-        drogon::Head                                  // HTTP HEAD method.
-    );
-
-    ADD_METHOD_TO(                                    // Register OPTIONS for method rejection.
-        ChannelController::createChannelInfo,         // Reuse the same handler.
-        "/createChannelInfo",                         // Use the same API path.
-        drogon::Options                               // HTTP OPTIONS method.
-    );
-
-    METHOD_LIST_END                                   // Finish declaring HTTP routes.
-
-    void createChannelInfo(                           // Declare the request handler.
-        const drogon::HttpRequestPtr &request,        // Incoming HTTP request.
-        std::function<void(const drogon::HttpResponsePtr &)> &&callback // Response callback.
-    );                                                // End the declaration.
-};                                                    // End the controller class.
-
-#endif                                                // End the header guard.
+#endif
 
 
 
 
 
 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- /*   #pragma once
 
-    #ifndef CHANNEL_CONTROLLER_H
-    #define CHANNEL_CONTROLLER_H
 
-    #include <drogon/HttpController.h>
-    #include <functional>
 
-    class ChannelController
-        : public drogon::HttpController<ChannelController>
-    {
-    public:
-        METHOD_LIST_BEGIN
 
-        // Register the POST endpoint.
-        ADD_METHOD_TO(
-            ChannelController::createChannelInfo,
-            "/createChannelInfo",
-            drogon::Post
-        );
 
-        METHOD_LIST_END
 
-        // Declare the request handler.
-        void createChannelInfo(
-            const drogon::HttpRequestPtr &request,
-            std::function<void(const drogon::HttpResponsePtr &)> &&callback
-        );
-    };
 
-    #endif
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+#ifndef CHANNEL_CONTROLLER_H
+#define CHANNEL_CONTROLLER_H
+
+#include <drogon/drogon.h>
+
+#include <functional>
+
+// Controller for the channel API.
+class ChannelController
+    : public drogon::HttpController<ChannelController>
+{
+public:
+    // Register the POST /createChannelInfo endpoint.
+    METHOD_LIST_BEGIN
+
+    METHOD_ADD(
+        ChannelController::createChannelInfo,
+        "/createChannelInfo",
+        drogon::Post);
+
+    METHOD_LIST_END
+
+    // Handle requests to create channel information.
+    void createChannelInfo(
+        const drogon::HttpRequestPtr &request,
+        std::function<void(const drogon::HttpResponsePtr &)> &&callback);
+};
+
+// Load and initialize the API schemas before the server starts.
+void initializeChannelSchemas();
+
+#endif // CHANNEL_CONTROLLER_H
 */

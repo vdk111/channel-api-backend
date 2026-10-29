@@ -1,0 +1,3 @@
+/home/vinayak/workspace/project/channel/build-logging-test/CMakeFiles/channel.dir
+/home/vinayak/workspace/project/channel/build-logging-test/CMakeFiles/edit_cache.dir
+/home/vinayak/workspace/project/channel/build-logging-test/CMakeFiles/rebuild_cache.dir

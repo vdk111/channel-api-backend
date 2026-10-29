@@ -17,4 +17,3 @@ CREATE TABLE IF NOT EXISTS channel_info
     -- Automatically record when the row was created.
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-

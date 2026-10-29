@@ -1,127 +1,84 @@
-
 #include <drogon/drogon.h>
+
+#include "controllers/ChannelController.h"
+
 #include <exception>
 
 int main()
 {
+    // Get the Drogon application instance.
+    auto &app = drogon::app();
+
+    // Write Drogon's built-in logs to the logs directory.
+    // The second argument is the base name of the log file.
+    app.setLogPath(
+        "/home/vinayak/workspace/project/channel/logs",
+        "channel");
+
+    // Include INFO, WARN, ERROR, and DEBUG messages in the logs.
+    app.setLogLevel(trantor::Logger::kDebug);
+
+    // Use local time in log timestamps.
+    app.setLogLocalTime(true);
+
+    // Log that the application is starting.
+    LOG_INFO << "Application is starting";
+
+    // Configure the PostgreSQL database connection.
+    app.createDbClient(
+        "postgresql",
+        "127.0.0.1",
+        5432,
+        "channel_db",
+        "app_user",
+        "",
+        2,
+        "",
+        "default",
+        false,
+        "",
+        1.0,
+        false);
+
     try
     {
-        // Configure the log output file and logging level.
-        // The path is relative to the directory where you start the program.
-        drogon::app().setLogPath(
-            "/home/vinayak/workspace/project/channel_backend/logs"
-        );
-
-        // Include informational messages, warnings, and errors.
-        drogon::app().setLogLevel(trantor::Logger::kInfo);
-
-        // Configure the PostgreSQL connection.
-        drogon::app().createDbClient(
-            "postgresql",       //Database type
-            "127.0.0.1",        //Database server address
-            5432,               //PostgreSQL port
-            "channel_db",       //Database name
-            "app_user",         //Database username
-            "",                 //empty password
-            2,                  //Database connection pool size
-            "default"           //Name used to retrieve this connection pool later
-        );
-
-        // Listen on port 8077.
-        drogon::app().addListener("0.0.0.0", 8077);
-
-        // Configure worker threads.
-        drogon::app().setThreadNum(2);
-
-        // Write the startup message to the logger.
-        LOG_INFO << "Channel backend starting on port 8077";
-
-        // Start the server.
-        drogon::app().run();
-
-        // Log when the server stops normally.
-        LOG_INFO << "Channel backend stopped";
+        // Load the existing OnnetJsonParser schemas.
+        initializeChannelSchemas();
     }
-    catch (const std::exception &error)
+    catch (const std::exception &exception)
     {
-        // Log startup failures.
-        LOG_ERROR << "Channel backend failed: " << error.what();
-        return 1;
-    }
-
-    return 0;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-#include <drogon/drogon.h>  // Provides the Drogon web framework.
-#include <iostream>          // Provides std::cout and std::cerr.
-#include <exception>         // Provides std::exception.
-
-int main()
-{
-    try
-    {
-        // Create a PostgreSQL connection pool.
-        // Arguments: database type, host, port, database, username,
-        // password, connection count, client name, and other options.
-        //
-        // Password is empty because this project is configured for
-        // passwordless local PostgreSQL authentication.
-        drogon::app().createDbClient(
-            "postgresql",    // Database type.
-            "127.0.0.1",     // PostgreSQL host.
-            5432,            // PostgreSQL port.
-            "channel_db",    // Database name.
-            "app_user",      // PostgreSQL username.
-            "",              // No password.
-            2,               // Number of database connections.
-            "default"        // Database client name.
-        );
-
-        // Listen on port 8077 on all network interfaces.
-        drogon::app().addListener("0.0.0.0", 8077);
-
-        // Configure two server threads.
-        drogon::app().setThreadNum(2);
-
-        // Print a startup message.
-        std::cout << "Channel backend starting on port 8077..."
-                  << std::endl;
-
-        // Start the server.
-        drogon::app().run();
-    }
-    catch (const std::exception &error)
-    {
-        // Display startup errors.
-        std::cerr << "Failed to start channel backend: "
-                  << error.what() << std::endl;
+        // Log the actual schema initialization error.
+        LOG_ERROR << "Schema initialization failed: "
+                  << exception.what();
 
         return 1;
     }
 
+    // Configure the API listener.
+    app.addListener("0.0.0.0", 8076);
+
+    // Use four Drogon worker threads.
+    app.setThreadNum(4);
+
+    // Do not log request validation or database outcomes here.
+    // Those messages belong in the controller and service callbacks.
+    LOG_INFO << "Application configuration completed";
+
+    app.registerHandler(
+    "/createChannelInfo",
+    [](const drogon::HttpRequestPtr &request,
+       std::function<void(const drogon::HttpResponsePtr &)> &&callback)
+    {
+        // Forward the request to the existing controller handler.
+        auto controller = std::make_shared<ChannelController>();
+        controller->createChannelInfo(request, std::move(callback));
+    },
+    {drogon::Post}
+);
+
+    // Start the server and process incoming requests.
+    
+    app.run();
+
     return 0;
 }
-
-*/

@@ -1,0 +1,47 @@
+
+{
+    "api": "createChannelInfo",
+    "version": "1.0",
+    "method": "POST",
+    "path": "/createChannelInfo",
+    "allowUnknownFields": false,
+    "maxBodyBytes": 4096,
+    "maxDepth": 2,
+    "fields": {
+        "channel_id": {
+            "type": "uint32",
+            "required": true,
+            "min": 1,
+            "max": 2147483647
+        },
+        "channel_name": {
+            "type": "string",
+            "required": true,
+            "minLength": 1,
+            "maxLength": 100,
+            "allowEscapes": false
+        },
+        "channel_type": {
+            "type": "uint32",
+            "required": true,
+            "min": 0,
+            "max": 1
+        },
+        "status": {
+            "type": "uint32",
+            "required": true,
+            "min": 0,
+            "max": 1
+        }
+    }
+}
+
+"log": {
+    "log_path": "/home/vinayak/workspace/project/channel_backend/logs",
+    "logfile_base_name": "channel_backend",
+    "log_size_limit": 100000000,
+    "max_files": 10,
+    "log_level": "DEBUG",
+    "display_local_time": true
+}
+
