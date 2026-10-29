@@ -1,0 +1,8 @@
+# Ignore generated CMake build files.
+build/
+
+# Ignore local log files.
+logs/
+
+# Ignore temporary files.
+*.tmp
