@@ -1,16 +1,15 @@
-
 # Require CMake version 3.20 or newer.
 cmake_minimum_required(VERSION 3.20)
 
-# Define the project and enable C++ compilation.
-project(channel LANGUAGES CXX)
+# Define the project.
+project(channel_backup LANGUAGES CXX)
 
-# Use the C++23 language standard required by OnnetJsonParser.
+# Use C++23 for OnnetJsonParser.
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Find Drogon from the existing workspace installation.
+# Find the existing Drogon installation.
 set(Drogon_DIR
     "/home/vinayak/workspace/drogon-pg-install/lib64/cmake/Drogon"
     CACHE PATH "Drogon package directory" FORCE
@@ -18,95 +17,95 @@ set(Drogon_DIR
 
 find_package(Drogon CONFIG REQUIRED)
 
-# Find the platform thread library.
+# Find threading support.
 find_package(Threads REQUIRED)
 
-# Define the local third-party parser directory.
+# Define the custom parser directory.
 set(ONNET_JSON_ROOT
     "${CMAKE_CURRENT_SOURCE_DIR}/third_party/onnet_json_parser"
 )
 
-# Define the parser header directory.
+# Define the parser include directory.
 set(ONNET_JSON_INCLUDE_DIR
     "${ONNET_JSON_ROOT}/include"
 )
 
-# Define the Glaze header directory bundled with the parser.
+# Define the Glaze include directory.
 set(GLAZE_INCLUDE_DIR
     "${ONNET_JSON_ROOT}/include/source/glaze/include"
 )
 
-# Define the prebuilt parser static library.
+# Define the parser static library.
 set(ONNET_JSON_LIBRARY
     "${ONNET_JSON_ROOT}/lib/libonnet_json_parser.a"
 )
 
-# Define the directory containing the JSON schema files.
+# Define the schema directory.
 set(CHANNEL_SCHEMA_DIR
     "${CMAKE_CURRENT_SOURCE_DIR}/config/schema"
 )
 
-# Stop configuration if the parser header is missing.
+# Check that the parser header exists.
 if(NOT EXISTS "${ONNET_JSON_INCLUDE_DIR}/onnet/json/json_parser.hpp")
     message(FATAL_ERROR
-        "OnnetJsonParser header not found: ${ONNET_JSON_INCLUDE_DIR}/onnet/json/json_parser.hpp"
+        "OnnetJsonParser header not found"
     )
 endif()
 
-# Stop configuration if the Glaze header is missing.
+# Check that the Glaze header exists.
 if(NOT EXISTS "${GLAZE_INCLUDE_DIR}/glaze/glaze.hpp")
     message(FATAL_ERROR
-        "Glaze header not found: ${GLAZE_INCLUDE_DIR}/glaze/glaze.hpp"
+        "Glaze header not found"
     )
 endif()
 
-# Stop configuration if the static parser library is missing.
+# Check that the parser library exists.
 if(NOT EXISTS "${ONNET_JSON_LIBRARY}")
     message(FATAL_ERROR
-        "OnnetJsonParser library not found: ${ONNET_JSON_LIBRARY}"
+        "OnnetJsonParser library not found"
     )
 endif()
 
-# Stop configuration if the schema directory is missing.
+# Check that the schema directory exists.
 if(NOT IS_DIRECTORY "${CHANNEL_SCHEMA_DIR}")
     message(FATAL_ERROR
-        "Schema directory not found: ${CHANNEL_SCHEMA_DIR}"
+        "Schema directory not found"
     )
 endif()
 
-# Build the backend executable from its source files.
-add_executable(channel
+# Build the backend executable.
+add_executable(channel_backup
     src/main.cpp
     src/controllers/ChannelController.cpp
     src/services/ChannelService.cpp
 )
 
-# Add the backend headers, parser headers, and Glaze headers.
-target_include_directories(channel PRIVATE
+# Add project and third-party include directories.
+target_include_directories(channel_backup PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${ONNET_JSON_INCLUDE_DIR}"
     "${GLAZE_INCLUDE_DIR}"
 )
 
-# Make the schema directory available to the C++ code.
-target_compile_definitions(channel PRIVATE
+# Make the schema directory available to C++.
+target_compile_definitions(channel_backup PRIVATE
     CHANNEL_SCHEMA_DIR="${CHANNEL_SCHEMA_DIR}"
 )
 
-# Link Drogon, the local parser library, and threading support.
-target_link_libraries(channel PRIVATE
+# Link Drogon, OnnetJsonParser, and threading support.
+target_link_libraries(channel_backup PRIVATE
     Drogon::Drogon
     "${ONNET_JSON_LIBRARY}"
     Threads::Threads
 )
 
-# Enable common compiler warnings.
-target_compile_options(channel PRIVATE
+# Enable compiler warnings.
+target_compile_options(channel_backup PRIVATE
     -Wall
     -Wextra
 )
 
-# Print important configuration paths.
+# Display the configured paths.
 message(STATUS "OnnetJsonParser headers: ${ONNET_JSON_INCLUDE_DIR}")
 message(STATUS "Glaze headers: ${GLAZE_INCLUDE_DIR}")
 message(STATUS "OnnetJsonParser library: ${ONNET_JSON_LIBRARY}")

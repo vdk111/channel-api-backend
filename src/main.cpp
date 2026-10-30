@@ -3,81 +3,123 @@
 #include "controllers/ChannelController.h"
 
 #include <exception>
+#include <memory>
 
 int main()
 {
     // Get the Drogon application instance.
     auto &app = drogon::app();
 
-    // Write Drogon's built-in logs to the logs directory.
-    // The second argument is the base name of the log file.
+    // Configure the log directory and filename prefix.
     app.setLogPath(
-        "/home/vinayak/workspace/project/channel/logs",
-        "channel");
+        "/home/vinayak/workspace/project/channel_backup/logs",
+        "channel_backup"
+    );
 
-    // Include INFO, WARN, ERROR, and DEBUG messages in the logs.
+    // Enable application logging.
     app.setLogLevel(trantor::Logger::kDebug);
 
-    // Use local time in log timestamps.
+    // Use local timestamps.
     app.setLogLocalTime(true);
 
-    // Log that the application is starting.
     LOG_INFO << "Application is starting";
 
-    // Configure the PostgreSQL database connection.
+    // Configure the PostgreSQL connection.
     app.createDbClient(
-        "postgresql",
-        "127.0.0.1",
-        5432,
-        "channel_db",
-        "app_user",
-        "",
-        2,
-        "",
-        "default",
-        false,
-        "",
-        1.0,
-        false);
+        "postgresql",   // Type of database we are connecting to (PostgreSQL)
+        "127.0.0.1",    // IP address of the database server (localhost)
+        5432,           // Port number on which PostgreSQL is running
+        "channel_db",   // Name of the database we want to connect to
+        "app_user",     // Username used to log in to PostgreSQL
+        "",             // Password for the database user (currently empty)
+        2,              // Number of database connections created in the connection pool
+        "",             // Additional database configuration (empty value means default)
+        "default",      // Database client name used to identify this connection
+        false,          // Disable automatic reconnection
+        "",             // Additional database configuration (empty value means default)
+        1.0,            // Database connection timeout in seconds
+        false           // Disable automatic connection to a database through the ORM
+        
+        );
 
     try
     {
-        // Load the existing OnnetJsonParser schemas.
+        // Load the OnnetJsonParser schemas.
         initializeChannelSchemas();
     }
     catch (const std::exception &exception)
     {
-        // Log the actual schema initialization error.
         LOG_ERROR << "Schema initialization failed: "
                   << exception.what();
 
         return 1;
     }
 
-    // Configure the API listener.
-    app.addListener("0.0.0.0", 8076);
+    // Create one controller instance.
+    auto controller = std::make_shared<ChannelController>();
 
-    // Use four Drogon worker threads.
+    // Explicitly register POST /createChannelInfo.
+    app.registerHandler(
+        "/createChannelInfo",
+        [controller](
+            const drogon::HttpRequestPtr &request,
+            std::function<void(const drogon::HttpResponsePtr &)> &&callback
+        )
+        {
+            controller->createChannelInfo(
+                request,
+                std::move(callback)
+            );
+        },
+        {drogon::Post}
+    );
+
+    // Explicitly register GET /channels?id=101.
+    app.registerHandler(
+        "/channels",
+        [controller](
+            const drogon::HttpRequestPtr &request,
+            std::function<void(const drogon::HttpResponsePtr &)> &&callback
+        )
+        {
+            controller->getChannelById(
+                request,
+                std::move(callback)
+            );
+        },
+        {drogon::Get}
+    );
+
+    // Explicitly register GET /channels/101.
+    app.registerHandler(
+        "/channels/{1}",
+        [controller](
+            const drogon::HttpRequestPtr &request,
+            std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+            const std::string &channelIdText
+        )
+        {
+            controller->getChannelByPathId(
+                request,
+                std::move(callback),
+                channelIdText
+            );
+        },
+        {drogon::Get}
+    );
+
+    // Configure the server listener.
+    app.addListener("0.0.0.0", 8075);
+
+    // Use four worker threads.
     app.setThreadNum(4);
 
-    // Do not log request validation or database outcomes here.
-    // Those messages belong in the controller and service callbacks.
+    LOG_INFO << "POST route registered: /createChannelInfo";
+    LOG_INFO << "GET route registered: /channels";
+    LOG_INFO << "GET route registered: /channels/{1}";
     LOG_INFO << "Application configuration completed";
 
-    app.registerHandler(
-    "/createChannelInfo",
-    [](const drogon::HttpRequestPtr &request,
-       std::function<void(const drogon::HttpResponsePtr &)> &&callback)
-    {
-        // Forward the request to the existing controller handler.
-        auto controller = std::make_shared<ChannelController>();
-        controller->createChannelInfo(request, std::move(callback));
-    },
-    {drogon::Post}
-);
-
-    // Start the server and process incoming requests.
-    
+    // Start the HTTP server.
     app.run();
 
     return 0;

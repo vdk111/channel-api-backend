@@ -1,4 +1,3 @@
-
 #include "controllers/ChannelController.h"
 #include "services/ChannelService.h"
 
@@ -9,107 +8,83 @@
 #include <onnet/json/parser_context.hpp>
 #include <onnet/json/parse_error.hpp>
 
+#include <charconv>
 #include <cstdint>
 #include <limits>
 #include <mutex>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <utility>
+
+#ifndef CHANNEL_SCHEMA_DIR
+#error "CHANNEL_SCHEMA_DIR was not defined by CMake"
+#endif
 
 namespace
 {
-    // Stores the schemas used by the API.
+    // Store API schemas for the lifetime of the server.
     onnet::json::OnnetJsonSchemaRegistry g_schemaRegistry;
 
-    // Ensures that schemas are loaded only once.
+    // Ensure schemas are initialized only once.
     std::once_flag g_schemaLoadFlag;
 
-    // Creates an HTTP response containing JSON.
+    // Create an HTTP response containing JSON.
     drogon::HttpResponsePtr makeJsonResponse(
         drogon::HttpStatusCode status,
         const std::string &body)
     {
         auto response = drogon::HttpResponse::newHttpResponse();
+
         response->setStatusCode(status);
         response->setContentTypeCode(drogon::CT_APPLICATION_JSON);
         response->setBody(body);
+
         return response;
     }
 
-    // Escapes special characters before placing text in a JSON response.
+    // Escape special characters before inserting text into JSON.
     std::string escapeJson(const std::string &value)
     {
         std::string result;
 
-        for (unsigned char ch : value)
+        for (char ch : value)
         {
-            switch (ch)
+            if (ch == '"')
             {
-                case '"':
-                    result += "\\\"";
-                    break;
-
-                case '\\':
-                    result += "\\\\";
-                    break;
-
-                case '\n':
-                    result += "\\n";
-                    break;
-
-                case '\r':
-                    result += "\\r";
-                    break;
-
-                case '\t':
-                    result += "\\t";
-                    break;
-
-                case '\b':
-                    result += "\\b";
-                    break;
-
-                case '\f':
-                    result += "\\f";
-                    break;
-
-                default:
-                    // Escape other JSON control characters.
-                    if (ch < 0x20)
-                    {
-                        const char hex[] = "0123456789abcdef";
-                        result += "\\u00";
-                        result += hex[(ch >> 4) & 0x0F];
-                        result += hex[ch & 0x0F];
-                    }
-                    else
-                    {
-                        result += static_cast<char>(ch);
-                    }
-                    break;
+                result += "\\\"";
+            }
+            else if (ch == '\\')
+            {
+                result += "\\\\";
+            }
+            else if (ch == '\n')
+            {
+                result += "\\n";
+            }
+            else if (ch == '\r')
+            {
+                result += "\\r";
+            }
+            else if (ch == '\t')
+            {
+                result += "\\t";
+            }
+            else
+            {
+                result += ch;
             }
         }
 
         return result;
     }
 
-    // Creates an HTTP 400 response for an invalid field.
-    // logError=false prevents duplicate logs when the parser
-    // has already logged its detailed error.
+    // Create a JSON response describing an invalid field.
     drogon::HttpResponsePtr makeFieldError(
         const std::string &field,
-        const std::string &message,
-        bool logError = true)
+        const std::string &message)
     {
-        if (logError)
-        {
-            LOG_WARN << "POST /createChannelInfo"
-                     << " - validation failed"
-                     << " - field: " << field
-                     << " - reason: " << message;
-        }
-
         const std::string body =
             "{\"success\":false,"
             "\"error\":\"INVALID_FIELD\","
@@ -119,196 +94,251 @@ namespace
         return makeJsonResponse(drogon::k400BadRequest, body);
     }
 
-    // Checks whether a string contains only whitespace.
+    // Check whether a string contains only whitespace.
     bool isBlank(const std::string &value)
     {
         return value.find_first_not_of(" \t\n\r") == std::string::npos;
     }
+
+    // Convert an ID string into a valid channel ID.
+    bool parseChannelId(
+        const std::string &idText,
+        uint32_t &channelId)
+    {
+        // Reject an empty ID.
+        if (idText.empty())
+        {
+            return false;
+        }
+
+        // Identify the beginning and end of the ID text.
+        const char *begin = idText.data();
+        const char *end = begin + idText.size();
+
+        // Convert the text into an unsigned integer.
+        const auto result = std::from_chars(begin, end, channelId);
+
+        // Reject invalid characters, overflow, or trailing characters.
+        if (result.ec != std::errc{} || result.ptr != end)
+        {
+            return false;
+        }
+
+        // Channel IDs must be greater than zero.
+        if (channelId == 0)
+        {
+            return false;
+        }
+
+        // Ensure the ID fits the PostgreSQL INTEGER column.
+        if (channelId >
+            static_cast<uint32_t>(std::numeric_limits<int32_t>::max()))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    // Validate an ID and retrieve its channel from PostgreSQL.
+    void handleGetChannelById(
+        const std::string &idText,
+        std::function<void(const drogon::HttpResponsePtr &)> &&callback)
+    {
+        uint32_t channelId = 0;
+
+        // Reject an invalid ID before querying PostgreSQL.
+        if (!parseChannelId(idText, channelId))
+        {
+            callback(makeJsonResponse(
+                drogon::k400BadRequest,
+                R"({"success":false,"error":"INVALID_ID","message":"id must be a positive integer within the supported range"})"
+            ));
+
+            return;
+        }
+
+        // Retrieve the matching channel asynchronously.
+        getChannelByIdAsync(channelId, std::move(callback));
+    }
 }
 
-// Loads the API schemas before the server accepts requests.
+// Load the schemas before the server starts accepting requests.
 void initializeChannelSchemas()
 {
     std::call_once(g_schemaLoadFlag, []()
     {
-        // Load schemas from the directory configured in CMake.  
+        // Load schema files from the configured directory.
         g_schemaRegistry.loadDirectory(CHANNEL_SCHEMA_DIR);
 
-        // Confirm that the required API schema exists.
+        // Find the schema for POST /createChannelInfo.
         const auto *schema =
             g_schemaRegistry.find("POST", "/createChannelInfo");
 
-        // Stop startup if the schema is missing.
+        // Stop startup if the required schema is missing.
         if (schema == nullptr)
         {
-            LOG_ERROR << "Required schema not found:"
-                      << " POST /createChannelInfo";
-
             throw std::runtime_error(
-                "Schema for POST /createChannelInfo was not found");
+                "Schema for POST /createChannelInfo was not found"
+            );
         }
 
-        LOG_INFO << "Loaded schema for POST /createChannelInfo";
+        LOG_INFO << "OnnetJsonParser schemas loaded successfully";
     });
 }
 
-// Handles POST /createChannelInfo requests.
+// Handle POST /createChannelInfo.
 void ChannelController::createChannelInfo(
     const drogon::HttpRequestPtr &request,
     std::function<void(const drogon::HttpResponsePtr &)> &&callback)
 {
-    // Record that a request reached this controller.
-    LOG_INFO << "POST /createChannelInfo - request received";
-
-    // STEP 1: Check the HTTP method.
+    // Only POST requests are allowed.
     if (request->method() != drogon::Post)
     {
-        LOG_WARN << "POST /createChannelInfo"
-                 << " - unsupported HTTP method";
-
         auto response = makeJsonResponse(
             drogon::k405MethodNotAllowed,
-            R"({"success":false,"error":"METHOD_NOT_ALLOWED","message":"Use POST"})");
+            R"({"success":false,"error":"METHOD_NOT_ALLOWED","message":"Use POST"})"
+        );
 
         response->addHeader("Allow", "POST");
         callback(response);
+
         return;
     }
 
-    // STEP 2: Find the schema for this API.
+    // Find the schema for this endpoint.
     const auto *schema =
         g_schemaRegistry.find("POST", "/createChannelInfo");
 
+    // Return an error if the schema is unavailable.
     if (schema == nullptr)
     {
-        LOG_ERROR << "POST /createChannelInfo - schema not found";
-
         callback(makeJsonResponse(
             drogon::k500InternalServerError,
-            R"({"success":false,"error":"SCHEMA_NOT_FOUND","message":"API schema is unavailable"})"));
+            R"({"success":false,"error":"SCHEMA_NOT_FOUND","message":"API schema is unavailable"})"
+        ));
 
         return;
     }
 
-    // STEP 3: Parse and validate JSON using OnnetJsonParser.
+    // Read the incoming JSON body.
     const std::string_view requestBody = request->body();
 
-    // Each worker thread has its own parser context.
+    // Each worker thread gets its own parser context.
     thread_local onnet::json::ParserContext parserContext;
 
-    // Each worker thread has its own parser instance.
+    // Each worker thread gets its own parser.
     thread_local onnet::json::OnnetJsonParser parser;
 
-    // Clear the previous request's error information.
+    // Clear errors from the previous request.
     parserContext.reset();
 
-    // Parse the body and validate it against the API schema.
+    // Parse the JSON and validate it against the schema.
     const auto parseResult =
         parser.parse(*schema, requestBody, parserContext);
 
-    // Return an error if parsing or schema validation fails.
+    // Reject malformed JSON or schema validation failures.
     if (!parseResult)
     {
         const auto &error = parserContext.error;
 
-        // Use the parser's field name when available.
-        // Use "request" for errors without a specific field.
         const std::string field =
-            error.field_name.empty()
-                ? "request"
-                : error.field_name;
+            error.field_name.empty() ? "request" : error.field_name;
 
-        // Prefer the parser's detailed message.
         const std::string message =
             error.message.empty()
                 ? onnet::json::parseErrorToString(error.code)
                 : error.message;
 
-        // Log parser diagnostics, including the byte position.
-        LOG_WARN << "POST /createChannelInfo"
-                 << " - OnnetJsonParser validation failed"
-                 << " - error: "
-                 << onnet::json::parseErrorToString(error.code)
-                 << " - field: " << field
-                 << " - message: " << message
-                 << " - byte_offset: " << error.byte_offset;
+        callback(makeFieldError(field, message));
 
-        // The detailed parser error is already logged above.
-        callback(makeFieldError(field, message, false));
         return;
     }
 
-    // Access the parsed JSON only after successful validation.
+    // Access the validated JSON values.
     const auto &json = parseResult.view;
 
-    // STEP 4: Extract and validate channel_id.
+    // Extract the channel ID.
     const uint32_t channelId = json.getUInt32("channel_id");
 
+    // Reject channel ID zero.
     if (channelId == 0)
     {
         callback(makeFieldError(
             "channel_id",
-            "channel_id must be greater than 0"));
+            "channel_id must be greater than 0"
+        ));
+
         return;
     }
 
+    // Reject IDs that exceed the PostgreSQL INTEGER range.
     if (channelId >
         static_cast<uint32_t>(std::numeric_limits<int32_t>::max()))
     {
         callback(makeFieldError(
             "channel_id",
-            "channel_id exceeds the maximum supported value"));
+            "channel_id exceeds the maximum supported value"
+        ));
+
         return;
     }
 
-    // STEP 5: Extract and validate channel_name.
+    // Extract the channel name.
     const std::string channelName =
         std::string(json.getString("channel_name"));
 
+    // Reject an empty or whitespace-only channel name.
     if (channelName.empty() || isBlank(channelName))
     {
         callback(makeFieldError(
             "channel_name",
-            "channel_name cannot be empty"));
+            "channel_name cannot be empty"
+        ));
+
         return;
     }
 
+    // Reject names longer than 100 bytes.
     if (channelName.size() > 100)
     {
         callback(makeFieldError(
             "channel_name",
-            "channel_name must not exceed 100 bytes"));
+            "channel_name must not exceed 100 bytes"
+        ));
+
         return;
     }
 
-    // STEP 6: Extract and validate channel_type.
+    // Extract the channel type.
     const uint32_t channelType = json.getUInt32("channel_type");
 
+    // Only channel types 0 and 1 are allowed.
     if (channelType != 0 && channelType != 1)
     {
         callback(makeFieldError(
             "channel_type",
-            "channel_type must be 0 or 1"));
+            "channel_type must be 0 or 1"
+        ));
+
         return;
     }
 
-    // STEP 7: Extract and validate status.
+    // Extract the channel status.
     const uint32_t status = json.getUInt32("status");
 
+    // Only status values 0 and 1 are allowed.
     if (status != 0 && status != 1)
     {
         callback(makeFieldError(
             "status",
-            "status must be 0 or 1"));
+            "status must be 0 or 1"
+        ));
+
         return;
     }
 
-    // All parsing, schema, and application checks passed.
-    LOG_INFO << "POST /createChannelInfo"
-             << " - validation successful"
-             << " - channel_id: " << channelId;
-
-    // STEP 8: Prepare the validated channel data.
+    // Store the validated fields in the service data structure.
     ChannelData data{
         channelId,
         channelName,
@@ -316,9 +346,45 @@ void ChannelController::createChannelInfo(
         status
     };
 
-    // STEP 9: Insert the data into PostgreSQL asynchronously.
-    // Keep the existing service implementation unchanged.
+    // Insert the channel asynchronously into PostgreSQL.
     insertChannelInfoAsync(
         std::move(data),
-        std::move(callback));
+        std::move(callback)
+    );
+}
+
+// Handle GET /channels?id=101.
+void ChannelController::getChannelById(
+    const drogon::HttpRequestPtr &request,
+    std::function<void(const drogon::HttpResponsePtr &)> &&callback)
+{
+    // Read the ID from the query string.
+    const std::string idText = request->getParameter("id");
+
+    // Return HTTP 400 if the ID is missing.
+    if (idText.empty())
+    {
+        callback(makeJsonResponse(
+            drogon::k400BadRequest,
+            R"({"success":false,"error":"INVALID_ID","message":"The id query parameter is required"})"
+        ));
+
+        return;
+    }
+
+    // Validate the ID and retrieve the channel.
+    handleGetChannelById(idText, std::move(callback));
+}
+
+// Handle GET /channels/101.
+void ChannelController::getChannelByPathId(
+    const drogon::HttpRequestPtr &request,
+    std::function<void(const drogon::HttpResponsePtr &)> &&callback,
+    const std::string &channelIdText)
+{
+    // The ID is supplied by Drogon's route binding.
+    (void)request;
+
+    // Validate the ID and retrieve the channel.
+    handleGetChannelById(channelIdText, std::move(callback));
 }

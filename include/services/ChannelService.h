@@ -7,7 +7,7 @@
 #include <functional>
 #include <string>
 
-// Holds the validated channel values that will be inserted into PostgreSQL.
+// Holds validated channel data passed from the controller to the service.
 struct ChannelData
 {
     uint32_t channelId;
@@ -16,13 +16,20 @@ struct ChannelData
     uint32_t status;
 };
 
-// Represents the callback used to send an HTTP response.
+// Callback used by the service to return an HTTP response.
 using HttpResponseCallback =
     std::function<void(const drogon::HttpResponsePtr &)>;
 
-// Inserts channel data into PostgreSQL without blocking the request thread.
+// Inserts a channel into PostgreSQL asynchronously.
 void insertChannelInfoAsync(
     ChannelData data,
-    HttpResponseCallback callback);
+    HttpResponseCallback callback
+);
+
+// Retrieves a channel from PostgreSQL asynchronously using its ID.
+void getChannelByIdAsync(
+    uint32_t channelId,
+    HttpResponseCallback callback
+);
 
 #endif // CHANNEL_SERVICE_H
