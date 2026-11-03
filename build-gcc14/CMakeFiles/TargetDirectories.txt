@@ -1,0 +1,3 @@
+/home/vinayak/workspace/project/channel-github-upload/build-gcc14/CMakeFiles/channel_backup.dir
+/home/vinayak/workspace/project/channel-github-upload/build-gcc14/CMakeFiles/edit_cache.dir
+/home/vinayak/workspace/project/channel-github-upload/build-gcc14/CMakeFiles/rebuild_cache.dir

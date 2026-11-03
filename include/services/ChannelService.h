@@ -26,7 +26,7 @@ void insertChannelInfoAsync(
     HttpResponseCallback callback
 );
 
-// Retrieves a channel from PostgreSQL asynchronously using its ID.
+// Retrieves a channel from PostgreSQL or Redis asynchronously.
 void getChannelByIdAsync(
     uint32_t channelId,
     HttpResponseCallback callback
