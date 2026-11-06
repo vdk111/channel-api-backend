@@ -1,150 +1,143 @@
-#include <drogon/drogon.h>
+# Require CMake version 3.20 or newer.
+cmake_minimum_required(VERSION 3.20)
 
-#include "controllers/ChannelController.h"
+# Define the project name and enable C++.
+project(channel_backup LANGUAGES CXX)
 
-#include <exception>
-#include <memory>
-#include <utility>
+# Use C++23 for OnnetJsonParser.
+set(CMAKE_CXX_STANDARD 23)
 
-int main()
-{
-    // Get the Drogon application instance.
-    auto &app = drogon::app();
+# Require the selected C++ standard.
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-    // Configure the directory where application logs are stored.
-    app.setLogPath(
-        "/home/vinayak/workspace/project/channel_backup/logs",
-        "channel_backup"
-    );
+# Disable compiler-specific C++ extensions.
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-    // Enable debug-level logging.
-    app.setLogLevel(trantor::Logger::kDebug);
+# Find the existing Drogon installation.
+set(Drogon_DIR
+    "/home/vinayak/workspace/drogon-pg-install/lib64/cmake/Drogon"
+    CACHE PATH "Drogon package directory" FORCE
+)
 
-    // Use local time in log timestamps.
-    app.setLogLocalTime(true);
+# Load the Drogon CMake package.
+find_package(Drogon CONFIG REQUIRED)
 
-    // Log that the application is starting.
-    LOG_INFO << "Application is starting";
+# Find threading support.
+find_package(Threads REQUIRED)
 
-    // Configure the PostgreSQL database connection.
-    app.createDbClient(
-        "postgresql",   // Database type.
-        "127.0.0.1",    // PostgreSQL server address.
-        5432,           // PostgreSQL port.
-        "channel_db",   // Database name.
-        "app_user",     // Database username.
-        "",             // Database password.
-        2,              // Number of PostgreSQL connections in the pool.
-        "",             // Additional configuration file.
-        "default",      // Name of this database client.
-        false,          // Disable fast mode.
-        "",             // Character set.
-        1.0,            // Connection timeout in seconds.
-        false           // Disable automatic ORM mapping.
-    );
+# Define the custom parser directory.
+set(ONNET_JSON_ROOT
+    "${CMAKE_CURRENT_SOURCE_DIR}/third_party/onnet_json_parser"
+)
 
-    // Create a Redis client before the application starts.
-    app.createRedisClient(
-        "127.0.0.1",    // Redis server address.
-        6379,           // Redis server port.
-        "default",      // Name of the Redis client.
-        "",             // Redis password (empty if authentication is disabled).
-        2,              // Number of Redis connections.
-        false,          // Disable fast mode.
-        1.0             // Redis command timeout in seconds.
-    );
+# Define the parser include directory.
+set(ONNET_JSON_INCLUDE_DIR
+    "${ONNET_JSON_ROOT}/include"
+)
 
-    // Log successful Redis client configuration.
-    LOG_INFO << "Redis client configured";
+# Define the Glaze include directory.
+set(GLAZE_INCLUDE_DIR
+    "${ONNET_JSON_ROOT}/include/source/glaze/include"
+)
 
-    try
-    {
-        // Load the OnnetJsonParser schemas.
-        initializeChannelSchemas();
-    }
-    catch (const std::exception &exception)
-    {
-        // Log the reason if schema initialization fails.
-        LOG_ERROR << "Schema initialization failed: "
-                  << exception.what();
+# Define the parser static library.
+set(ONNET_JSON_LIBRARY
+    "${ONNET_JSON_ROOT}/lib/libonnet_json_parser.a"
+)
 
-        // Stop application startup.
-        return 1;
-    }
+# Define the schema directory.
+set(CHANNEL_SCHEMA_DIR
+    "${CMAKE_CURRENT_SOURCE_DIR}/config/schema"
+)
 
-    // Create one shared controller instance.
-    auto controller = std::make_shared<ChannelController>();
+# Define the Swagger documentation directory.
+set(OPENAPI_DOCS_DIR
+    "${CMAKE_CURRENT_SOURCE_DIR}/docs"
+)
 
-    // Register the POST /createChannelInfo endpoint.
-    app.registerHandler(
-        "/createChannelInfo",
-        [controller](
-            const drogon::HttpRequestPtr &request,
-            std::function<void(const drogon::HttpResponsePtr &)> &&callback
-        )
-        {
-            // Pass the request to the controller.
-            controller->createChannelInfo(
-                request,
-                std::move(callback)
-            );
-        },
-        {drogon::Post}
-    );
+# Check that the parser header exists.
+if(NOT EXISTS "${ONNET_JSON_INCLUDE_DIR}/onnet/json/json_parser.hpp")
+    message(FATAL_ERROR
+        "OnnetJsonParser header not found"
+    )
+endif()
 
-    // Register the GET /channels?id=101 endpoint.
-    app.registerHandler(
-        "/channels",
-        [controller](
-            const drogon::HttpRequestPtr &request,
-            std::function<void(const drogon::HttpResponsePtr &)> &&callback
-        )
-        {
-            // Pass the request to the controller.
-            controller->getChannelById(
-                request,
-                std::move(callback)
-            );
-        },
-        {drogon::Get}
-    );
+# Check that the Glaze header exists.
+if(NOT EXISTS "${GLAZE_INCLUDE_DIR}/glaze/glaze.hpp")
+    message(FATAL_ERROR
+        "Glaze header not found"
+    )
+endif()
 
-    // Register the GET /channels/101 endpoint.
-    app.registerHandler(
-        "/channels/{1}",
-        [controller](
-            const drogon::HttpRequestPtr &request,
-            std::function<void(const drogon::HttpResponsePtr &)> &&callback,
-            const std::string &channelIdText
-        )
-        {
-            // Pass the request and path ID to the controller.
-            controller->getChannelByPathId(
-                request,
-                std::move(callback),
-                channelIdText
-            );
-        },
-        {drogon::Get}
-    );
+# Check that the parser library exists.
+if(NOT EXISTS "${ONNET_JSON_LIBRARY}")
+    message(FATAL_ERROR
+        "OnnetJsonParser library not found"
+    )
+endif()
 
-    // Listen for HTTP requests on port 8075.
-    app.addListener("0.0.0.0", 8075);
+# Check that the schema directory exists.
+if(NOT IS_DIRECTORY "${CHANNEL_SCHEMA_DIR}")
+    message(FATAL_ERROR
+        "Schema directory not found"
+    )
+endif()
 
-    // Use four HTTP worker threads.
-    app.setThreadNum(4);
+# Check that the Swagger documentation directory exists.
+if(NOT IS_DIRECTORY "${OPENAPI_DOCS_DIR}")
+    message(FATAL_ERROR
+        "Swagger documentation directory not found"
+    )
+endif()
 
-    // Log the registered API routes.
-    LOG_INFO << "POST route registered: /createChannelInfo";
-    LOG_INFO << "GET route registered: /channels";
-    LOG_INFO << "GET route registered: /channels/{1}";
+# Build the backend executable.
+add_executable(channel_backup
+    src/main.cpp
+    src/controllers/ChannelController.cpp
+    src/services/ChannelService.cpp
+)
 
-    // Log that the application configuration is complete.
-    LOG_INFO << "Application configuration completed";
+# Add project and third-party include directories.
+target_include_directories(channel_backup PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "${ONNET_JSON_INCLUDE_DIR}"
+    "${GLAZE_INCLUDE_DIR}"
+)
 
-    // Start the HTTP server.
-    app.run();
+# Make the schema directory available to C++.
+target_compile_definitions(channel_backup PRIVATE
+    CHANNEL_SCHEMA_DIR="${CHANNEL_SCHEMA_DIR}"
+)
 
-    // Return success when the server stops.
-    return 0;
-}
+# Make the Swagger documentation directory available to C++.
+target_compile_definitions(channel_backup PRIVATE
+    OPENAPI_DOCS_DIR="${OPENAPI_DOCS_DIR}"
+)
+
+# Link Drogon, OnnetJsonParser, and threading support.
+target_link_libraries(channel_backup PRIVATE
+    Drogon::Drogon
+    "${ONNET_JSON_LIBRARY}"
+    Threads::Threads
+)
+
+# Enable common compiler warnings.
+target_compile_options(channel_backup PRIVATE
+    -Wall
+    -Wextra
+)
+
+# Display the configured parser header path.
+message(STATUS "OnnetJsonParser headers: ${ONNET_JSON_INCLUDE_DIR}")
+
+# Display the configured Glaze header path.
+message(STATUS "Glaze headers: ${GLAZE_INCLUDE_DIR}")
+
+# Display the configured parser library path.
+message(STATUS "OnnetJsonParser library: ${ONNET_JSON_LIBRARY}")
+
+# Display the configured schema directory.
+message(STATUS "Schema directory: ${CHANNEL_SCHEMA_DIR}")
+
+# Display the configured Swagger documentation directory.
+message(STATUS "Swagger documentation: ${OPENAPI_DOCS_DIR}")

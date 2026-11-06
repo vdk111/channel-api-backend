@@ -1,0 +1,250 @@
+# OpenAPI specification version.
+openapi: 3.0.3
+
+# General information about the backend API.
+info:
+  # Name displayed at the top of Swagger UI.
+  title: Channel Backup REST API
+
+  # Current documentation version.
+  version: 1.0.0
+
+  # Description of this backend.
+  description: |
+    REST API documentation for the Channel Backup C++ backend.
+    The backend uses Drogon, PostgreSQL, Redis and OnnetJsonParser.
+
+# Base address of the running backend.
+servers:
+  - url: http://127.0.0.1:8075
+    description: Local Channel Backup server
+
+# API endpoint definitions.
+paths:
+
+  # POST endpoint to create channel information.
+  /createChannelInfo:
+    post:
+      # Group this API under Channel Management.
+      tags:
+        - Channel Management
+
+      # API summary.
+      summary: Create channel information
+
+      # Detailed API description.
+      description: |
+        Creates a new channel record.
+        The request body is validated using OnnetJsonParser
+        before the service inserts the record into PostgreSQL.
+
+      # JSON request body.
+      requestBody:
+        # The request body is mandatory.
+        required: true
+
+        # Supported request content type.
+        content:
+          application/json:
+            schema:
+              # Reference the channel request schema below.
+              $ref: '#/components/schemas/ChannelRequest'
+
+            # Example request data.
+            example:
+              channel_id: 101
+              channel_name: News Channel
+              channel_type: 1
+              status: 1
+
+      # Possible HTTP responses.
+      responses:
+
+        # Successful insertion.
+        '201':
+          description: Channel created successfully.
+
+        # Channel ID already exists.
+        '409':
+          description: A channel with this ID already exists.
+
+        # Invalid request or validation failure.
+        '400':
+          description: Invalid request or channel data.
+
+        # Internal database or server error.
+        '500':
+          description: Internal server error.
+
+  # GET endpoint using a query parameter.
+  /channels:
+    get:
+      # Group this API under Channel Management.
+      tags:
+        - Channel Management
+
+      # API summary.
+      summary: Get channel using query parameter
+
+      # Detailed API description.
+      description: |
+        Retrieves channel information using the channel ID
+        supplied as a query parameter.
+
+      # Query parameter definition.
+      parameters:
+        - name: id
+          in: query
+          required: true
+          description: Channel ID to retrieve.
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+          example: 101
+
+      # Possible HTTP responses.
+      responses:
+
+        # Channel found successfully.
+        '200':
+          description: Channel information retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelResponse'
+              example:
+                channel_id: 101
+                channel_name: News Channel
+                channel_type: 1
+                status: 1
+
+        # Channel not found.
+        '404':
+          description: Channel not found.
+
+        # Internal server error.
+        '500':
+          description: Internal server error.
+
+  # GET endpoint using a path parameter.
+  /channels/{channelId}:
+    get:
+      # Group this API under Channel Management.
+      tags:
+        - Channel Management
+
+      # API summary.
+      summary: Get channel using path parameter
+
+      # Detailed API description.
+      description: |
+        Retrieves channel information using the channel ID
+        supplied directly in the URL path.
+
+      # Path parameter definition.
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          description: Channel ID to retrieve.
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+          example: 101
+
+      # Possible HTTP responses.
+      responses:
+
+        # Channel found successfully.
+        '200':
+          description: Channel information retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelResponse'
+              example:
+                channel_id: 101
+                channel_name: News Channel
+                channel_type: 1
+                status: 1
+
+        # Channel not found.
+        '404':
+          description: Channel not found.
+
+        # Internal server error.
+        '500':
+          description: Internal server error.
+
+# Reusable JSON data structures.
+components:
+  schemas:
+
+    # Request structure for creating a channel.
+    ChannelRequest:
+      type: object
+
+      # All four fields are required.
+      required:
+        - channel_id
+        - channel_name
+        - channel_type
+        - status
+
+      # Channel request properties.
+      properties:
+
+        # Unique channel identifier.
+        channel_id:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 2147483647
+          example: 101
+
+        # Channel name.
+        channel_name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: News Channel
+
+        # Channel type.
+        channel_type:
+          type: integer
+          enum: [0, 1]
+          example: 1
+
+        # Channel status.
+        status:
+          type: integer
+          enum: [0, 1]
+          example: 1
+
+    # Response structure for channel information.
+    ChannelResponse:
+      type: object
+      properties:
+
+        # Channel identifier.
+        channel_id:
+          type: integer
+          example: 101
+
+        # Channel name.
+        channel_name:
+          type: string
+          example: News Channel
+
+        # Channel type.
+        channel_type:
+          type: integer
+          example: 1
+
+        # Channel status.
+        status:
+          type: integer
+          example: 1
+

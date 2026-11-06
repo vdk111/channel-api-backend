@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<!-- Declare that this document uses HTML5. -->
+
+<html lang="en">
+<!-- Start the HTML document and specify English. -->
+
+<head>
+    <!-- Start the browser page configuration section. -->
+
+    <meta charset="UTF-8">
+    <!-- Support standard text characters. -->
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Make the page responsive on different screen sizes. -->
+
+    <title>Channel Backup API Documentation</title>
+    <!-- Set the browser tab title. -->
+
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.17.14/swagger-ui.css"
+    >
+    <!-- Load the Swagger UI stylesheet from a CDN. -->
+
+</head>
+<!-- End the head section. -->
+
+<body>
+    <!-- Start the visible browser page. -->
+
+    <div id="swagger-ui"></div>
+    <!-- Swagger UI will render its interface inside this element. -->
+
+    <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.17.14/swagger-ui-bundle.js">
+    </script>
+    <!-- Load the Swagger UI JavaScript library. -->
+
+    <script>
+        // Create the Swagger UI interface.
+        window.onload = function () {
+
+            // Configure Swagger UI.
+            window.ui = SwaggerUIBundle({
+
+                // Tell Swagger UI where the API description is located.
+                url: "/openapi.yaml",
+
+                // Select the HTML element where Swagger UI should appear.
+                dom_id: "#swagger-ui",
+
+                // Display the APIs in alphabetical order.
+                operationsSorter: "alpha",
+
+                // Display API tags in alphabetical order.
+                tagsSorter: "alpha",
+
+                // Allow users to expand and collapse API details.
+                docExpansion: "list",
+
+                // Enable the Try it out feature.
+                tryItOutEnabled: true,
+
+                // Display the Swagger UI interface.
+                presets: [
+                    SwaggerUIBundle.presets.apis
+                ]
+            });
+        };
+    </script>
+    <!-- End the Swagger UI configuration. -->
+
+</body>
+<!-- End the visible browser page. -->
+
+</html>
+<!-- End the HTML document. -->
+
