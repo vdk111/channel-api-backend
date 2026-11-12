@@ -1,5 +1,11 @@
+// Include the controller class declaration.
 #include "controllers/ChannelController.h"
-#include "services/ChannelService.h"
+
+// Include the function used for write operations.
+#include "services/ChannelCommandService.h"
+
+// Include the function used for read operations.
+#include "services/ChannelQueryService.h"
 
 #include <drogon/drogon.h>
 

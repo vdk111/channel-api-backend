@@ -1,5 +1,5 @@
 
-#include "services/ChannelService.h"
+#include "services/ChannelQueryService.h"
 
 #include <drogon/drogon.h>
 
@@ -8,17 +8,18 @@
 #include <string>
 #include <utility>
 
+// Keep query helper functions private to this source file.
 namespace
 {
     // Redis cache entries expire after five minutes.
     constexpr int CACHE_TTL_SECONDS = 300;
 
     // Create an HTTP response containing JSON.
-    drogon::HttpResponsePtr makeServiceResponse(
+    drogon::HttpResponsePtr makeQueryResponse(
         drogon::HttpStatusCode status,
         const std::string &body)
     {
-        // Create a new HTTP response object.
+        // Create a new HTTP response.
         auto response = drogon::HttpResponse::newHttpResponse();
 
         // Set the HTTP status code.
@@ -34,13 +35,13 @@ namespace
         return response;
     }
 
-    // Escape special characters in a database string before JSON output.
+    // Escape special characters before putting database text into JSON.
     std::string escapeChannelJson(const std::string &value)
     {
-        // This string will contain the escaped output.
+        // Store the escaped output.
         std::string result;
 
-        // Process every character in the original string.
+        // Process every character in the input string.
         for (unsigned char ch : value)
         {
             // Handle characters that have special meaning in JSON.
@@ -78,10 +79,16 @@ namespace
                     // Escape other control characters.
                     if (ch < 0x20)
                     {
+                        // Hexadecimal digits used for JSON escaping.
                         const char hex[] = "0123456789abcdef";
 
+                        // Start a Unicode escape sequence.
                         result += "\\u00";
+
+                        // Add the upper hexadecimal digit.
                         result += hex[(ch >> 4) & 0x0F];
+
+                        // Add the lower hexadecimal digit.
                         result += hex[ch & 0x0F];
                     }
                     else
@@ -89,6 +96,7 @@ namespace
                         // Copy ordinary characters unchanged.
                         result += static_cast<char>(ch);
                     }
+
                     break;
             }
         }
@@ -97,21 +105,21 @@ namespace
         return result;
     }
 
-    // Create the Redis key for a particular channel.
+    // Generate the Redis key for a channel.
     std::string makeChannelCacheKey(uint32_t channelId)
     {
-        // Each channel gets a separate Redis key.
+        // Give each channel its own cache key.
         return "channel:" + std::to_string(channelId);
     }
 
-    // Build the JSON response body for a channel.
+    // Build the JSON response for a channel.
     std::string makeChannelJson(
         int channelId,
         const std::string &channelName,
         int channelType,
         int status)
     {
-        // Create a JSON object containing the channel information.
+        // Return the channel information in JSON format.
         return
             "{\"success\":true,"
             "\"data\":{"
@@ -122,161 +130,47 @@ namespace
             "}}";
     }
 
-    // Delete the cached copy of a channel after a successful database insert.
-    void invalidateChannelCache(uint32_t channelId)
-    {
-        // Build the Redis key for the channel.
-        const std::string key = makeChannelCacheKey(channelId);
-
-        // Get the configured Redis client.
-        auto redisClient = drogon::app().getRedisClient();
-
-        // Delete the channel's cached value asynchronously.
-        redisClient->execCommandAsync(
-            // Called when Redis successfully executes DEL.
-            [channelId](const drogon::nosql::RedisResult &)
-            {
-                // Log successful cache invalidation.
-                LOG_INFO << "Redis cache invalidated"
-                         << " - channel_id: " << channelId;
-            },
-
-            // Called if the Redis command fails.
-            [channelId](const std::exception &error)
-            {
-                // Log the error without failing the successful database insert.
-                LOG_ERROR << "Redis cache invalidation failed"
-                          << " - channel_id: " << channelId
-                          << " - reason: " << error.what();
-            },
-
-            // Redis DEL removes the specified key.
-            "DEL %s",
-            key.c_str()
-        );
-    }
-
-    // Handle a successful PostgreSQL INSERT.
-    void handleInsertSuccess(
-        const drogon::orm::Result &result,
-        const std::shared_ptr<HttpResponseCallback> &callback,
-        uint32_t channelId)
-    {
-        // An empty result means the channel ID already exists.
-        if (result.empty())
-        {
-            // Log the duplicate channel ID.
-            LOG_WARN << "POST /createChannelInfo"
-                     << " - duplicate channel_id: " << channelId;
-
-            // Return HTTP 409 Conflict.
-            (*callback)(makeServiceResponse(
-                drogon::k409Conflict,
-                R"({"success":false,"error":"DUPLICATE_CHANNEL_ID","field":"channel_id","message":"Channel ID already exists"})"
-            ));
-
-            // Stop processing the duplicate.
-            return;
-        }
-
-        // Remove any cached copy after the database insert succeeds.
-        invalidateChannelCache(channelId);
-
-        // Log the successful PostgreSQL insertion.
-        LOG_INFO << "POST /createChannelInfo"
-                 << " - database insertion successful"
-                 << " - channel_id: " << channelId;
-
-        // Return HTTP 201 Created.
-        (*callback)(makeServiceResponse(
-            drogon::k201Created,
-            R"({"success":true,"message":"Channel information created successfully"})"
-        ));
-    }
-
-    // Handle a failed PostgreSQL INSERT.
-    void handleInsertError(
-        const std::exception_ptr &error,
-        const std::shared_ptr<HttpResponseCallback> &callback,
-        uint32_t channelId)
-    {
-        // Try to extract the database error details.
-        try
-        {
-            // Rethrow the captured exception.
-            if (error)
-            {
-                std::rethrow_exception(error);
-            }
-
-            // Log if no exception details are available.
-            LOG_ERROR << "Database insertion failed"
-                      << " - channel_id: " << channelId
-                      << " - no exception details supplied";
-        }
-        catch (const std::exception &exception)
-        {
-            // Log the actual database exception.
-            LOG_ERROR << "Database insertion failed"
-                      << " - channel_id: " << channelId
-                      << " - reason: " << exception.what();
-        }
-        catch (...)
-        {
-            // Handle an unknown exception.
-            LOG_ERROR << "Database insertion failed"
-                      << " - channel_id: " << channelId
-                      << " - unknown error";
-        }
-
-        // Return an HTTP 500 response.
-        (*callback)(makeServiceResponse(
-            drogon::k500InternalServerError,
-            R"({"success":false,"error":"DATABASE_ERROR","message":"Database operation failed"})"
-        ));
-    }
-
     // Handle a successful PostgreSQL SELECT.
     void handleSelectSuccess(
         const drogon::orm::Result &result,
         const std::shared_ptr<HttpResponseCallback> &callback,
         uint32_t channelId)
     {
-        // Check whether PostgreSQL returned a matching channel.
+        // Check whether PostgreSQL returned a matching row.
         if (result.empty())
         {
-            // Log that the channel was not found.
+            // Log that the requested channel does not exist.
             LOG_INFO << "GET /channels"
                      << " - channel not found"
                      << " - channel_id: " << channelId;
 
             // Return HTTP 404 Not Found.
-            (*callback)(makeServiceResponse(
+            (*callback)(makeQueryResponse(
                 drogon::k404NotFound,
                 R"({"success":false,"error":"CHANNEL_NOT_FOUND","message":"Channel not found"})"
             ));
 
-            // Stop processing because no channel exists.
+            // Stop because there is no channel to return.
             return;
         }
 
-        // Access the first matching database row.
+        // Access the first row returned by PostgreSQL.
         const auto &row = result[0];
 
-        // Extract the channel ID from PostgreSQL.
+        // Read the channel ID from the database row.
         const int channelIdValue = row["channel_id"].as<int>();
 
-        // Extract the channel name from PostgreSQL.
+        // Read the channel name from the database row.
         const std::string channelName =
             row["channel_name"].as<std::string>();
 
-        // Extract the channel type from PostgreSQL.
+        // Read the channel type from the database row.
         const int channelTypeValue = row["channel_type"].as<int>();
 
-        // Extract the channel status from PostgreSQL.
+        // Read the channel status from the database row.
         const int statusValue = row["status"].as<int>();
 
-        // Convert the database values into a JSON response.
+        // Convert the database row into a JSON response.
         const std::string body = makeChannelJson(
             channelIdValue,
             channelName,
@@ -284,15 +178,15 @@ namespace
             statusValue
         );
 
-        // Create the Redis key for this channel.
+        // Generate the Redis key for this channel.
         const std::string key = makeChannelCacheKey(channelId);
 
-        // Get the configured Redis client.
+        // Get the Redis client configured in main.cpp.
         auto redisClient = drogon::app().getRedisClient();
 
-        // Store the JSON response in Redis with an expiry time.
+        // Store the result in Redis with a five-minute expiry.
         redisClient->execCommandAsync(
-            // Called when Redis successfully stores the value.
+            // This callback runs when Redis stores the value.
             [channelId](const drogon::nosql::RedisResult &)
             {
                 // Log that the cache was populated.
@@ -300,29 +194,35 @@ namespace
                          << " - channel_id: " << channelId;
             },
 
-            // Called if Redis cannot store the value.
+            // This callback runs if Redis cannot store the value.
             [channelId](const std::exception &error)
             {
-                // Log the Redis error; the PostgreSQL response can still be returned.
+                // Log the Redis error.
                 LOG_ERROR << "Redis cache SETEX failed"
                           << " - channel_id: " << channelId
                           << " - reason: " << error.what();
             },
 
-            // SETEX stores the JSON and automatically expires it.
+            // SETEX stores the value and assigns its expiry time.
             "SETEX %s %d %s",
+
+            // Redis key.
             key.c_str(),
+
+            // Cache expiry in seconds.
             CACHE_TTL_SECONDS,
+
+            // JSON response stored as the cache value.
             body.c_str()
         );
 
-        // Log that the channel was retrieved from PostgreSQL.
+        // Log that PostgreSQL supplied the channel.
         LOG_INFO << "GET /channels"
                  << " - channel retrieved from PostgreSQL"
                  << " - channel_id: " << channelId;
 
-        // Return the database result to the client.
-        (*callback)(makeServiceResponse(
+        // Return the PostgreSQL result to the client.
+        (*callback)(makeQueryResponse(
             drogon::k200OK,
             body
         ));
@@ -334,10 +234,10 @@ namespace
         const std::shared_ptr<HttpResponseCallback> &callback,
         uint32_t channelId)
     {
-        // Try to extract the database error details.
+        // Try to extract and log the database exception.
         try
         {
-            // Rethrow the captured exception.
+            // Rethrow the exception captured by Drogon.
             if (error)
             {
                 std::rethrow_exception(error);
@@ -347,23 +247,25 @@ namespace
             LOG_ERROR << "Database SELECT failed"
                       << " - channel_id: " << channelId;
         }
+        // Handle standard C++ exceptions.
         catch (const std::exception &exception)
         {
-            // Log the actual database exception.
+            // Log the actual database error.
             LOG_ERROR << "Database SELECT failed"
                       << " - channel_id: " << channelId
                       << " - reason: " << exception.what();
         }
+        // Handle unknown exceptions.
         catch (...)
         {
-            // Handle an unknown exception.
+            // Log an unknown database error.
             LOG_ERROR << "Database SELECT failed"
                       << " - channel_id: " << channelId
                       << " - unknown error";
         }
 
-        // Return HTTP 500 if PostgreSQL cannot complete the query.
-        (*callback)(makeServiceResponse(
+        // Return HTTP 500 Internal Server Error.
+        (*callback)(makeQueryResponse(
             drogon::k500InternalServerError,
             R"({"success":false,"error":"DATABASE_ERROR","message":"Database operation failed"})"
         ));
@@ -374,32 +276,32 @@ namespace
         uint32_t channelId,
         const std::shared_ptr<HttpResponseCallback> &callback)
     {
-        // Define the SQL query.
+        // Define the SQL query used to retrieve a channel.
         const std::string sql =
             "SELECT channel_id, channel_name, channel_type, status "
             "FROM channel_info "
             "WHERE channel_id = $1 "
             "LIMIT 1";
 
-        // Log that the request is going to PostgreSQL.
+        // Log that the request is being sent to PostgreSQL.
         LOG_INFO << "Redis cache MISS"
                  << " - querying PostgreSQL"
                  << " - channel_id: " << channelId;
 
         // Execute the SELECT query asynchronously.
-        // IMPORTANT: Drogon requires the SQL string as the first argument.
         drogon::app().getDbClient()->execSqlAsync(
+            // Drogon requires the SQL statement as the first argument.
             sql,
 
-            // Called when PostgreSQL returns a result.
+            // This callback runs when PostgreSQL returns a result.
             [callback, channelId](
                 const drogon::orm::Result &result)
             {
-                // Process the database result and populate Redis.
+                // Process the result and populate Redis.
                 handleSelectSuccess(result, callback, channelId);
             },
 
-            // Called when PostgreSQL reports an error.
+            // This callback runs if PostgreSQL reports an error.
             [callback, channelId](
                 const std::exception_ptr &error)
             {
@@ -407,59 +309,10 @@ namespace
                 handleSelectError(error, callback, channelId);
             },
 
-            // Bind the requested channel ID to SQL parameter $1.
+            // Bind the channel ID to SQL parameter $1.
             channelId
         );
     }
-}
-
-// Insert channel information into PostgreSQL asynchronously.
-void insertChannelInfoAsync(
-    ChannelData data,
-    HttpResponseCallback callback)
-{
-    // Use parameterized SQL to prevent SQL injection.
-    const std::string sql =
-        "INSERT INTO channel_info "
-        "(channel_id, channel_name, channel_type, status) "
-        "VALUES ($1, $2, $3, $4) "
-        "ON CONFLICT (channel_id) DO NOTHING "
-        "RETURNING channel_id";
-
-    // Save the ID for logging and cache invalidation.
-    const uint32_t channelId = data.channelId;
-
-    // Share the HTTP callback with asynchronous handlers.
-    auto sharedCallback =
-        std::make_shared<HttpResponseCallback>(std::move(callback));
-
-    // Execute the INSERT without blocking the HTTP worker.
-    // IMPORTANT: Drogon requires the SQL string as the first argument.
-    drogon::app().getDbClient()->execSqlAsync(
-        sql,
-
-        // Called when PostgreSQL successfully executes the INSERT.
-        [sharedCallback, channelId](
-            const drogon::orm::Result &result)
-        {
-            // Check the insert result and invalidate Redis if successful.
-            handleInsertSuccess(result, sharedCallback, channelId);
-        },
-
-        // Called when PostgreSQL reports an INSERT error.
-        [sharedCallback, channelId](
-            const std::exception_ptr &error)
-        {
-            // Return the database error response.
-            handleInsertError(error, sharedCallback, channelId);
-        },
-
-        // Bind the channel values to SQL parameters.
-        data.channelId,
-        data.channelName,
-        data.channelType,
-        data.status
-    );
 }
 
 // Retrieve one channel, checking Redis before PostgreSQL.
@@ -467,43 +320,43 @@ void getChannelByIdAsync(
     uint32_t channelId,
     HttpResponseCallback callback)
 {
-    // Share the callback between the Redis and PostgreSQL operations.
+    // Keep the callback alive during asynchronous operations.
     auto sharedCallback =
         std::make_shared<HttpResponseCallback>(std::move(callback));
 
-    // Create the Redis key for the requested channel.
+    // Generate the Redis key for the requested channel.
     const std::string key = makeChannelCacheKey(channelId);
 
-    // Get the configured Redis client.
+    // Get the Redis client configured in main.cpp.
     auto redisClient = drogon::app().getRedisClient();
 
-    // Ask Redis for the cached channel.
+    // Ask Redis for the channel's cached value.
     redisClient->execCommandAsync(
-        // Called when Redis successfully executes GET.
+        // This callback runs when Redis successfully executes GET.
         [sharedCallback, channelId](
             const drogon::nosql::RedisResult &result)
         {
-            // Check whether Redis returned an existing value.
+            // Check whether Redis returned a cached value.
             if (result.type() != drogon::nosql::RedisResultType::kNil)
             {
-                // Extract the cached JSON response.
+                // Convert the cached Redis value into a string.
                 const std::string cachedBody = result.asString();
 
                 // Log that the request was served from Redis.
                 LOG_INFO << "Redis cache HIT"
                          << " - channel_id: " << channelId;
 
-                // Return the cached JSON without querying PostgreSQL.
-                (*sharedCallback)(makeServiceResponse(
+                // Return the cached response without querying PostgreSQL.
+                (*sharedCallback)(makeQueryResponse(
                     drogon::k200OK,
                     cachedBody
                 ));
 
-                // Stop processing because the cache supplied the response.
+                // Stop because Redis already supplied the response.
                 return;
             }
 
-            // Redis returned nil, meaning the key does not exist.
+            // Log that Redis does not contain the requested key.
             LOG_INFO << "Redis cache MISS"
                      << " - channel_id: " << channelId;
 
@@ -511,16 +364,16 @@ void getChannelByIdAsync(
             getChannelFromPostgreSQL(channelId, sharedCallback);
         },
 
-        // Called if the Redis GET command fails.
+        // This callback runs if the Redis GET command fails.
         [sharedCallback, channelId](
             const std::exception &error)
         {
-            // Log the Redis error.
+            // Log the Redis failure.
             LOG_ERROR << "Redis GET failed"
                       << " - channel_id: " << channelId
                       << " - reason: " << error.what();
 
-            // Continue using PostgreSQL if Redis is unavailable.
+            // Continue with PostgreSQL if Redis is unavailable.
             LOG_INFO << "Falling back to PostgreSQL"
                      << " - channel_id: " << channelId;
 
@@ -528,9 +381,10 @@ void getChannelByIdAsync(
             getChannelFromPostgreSQL(channelId, sharedCallback);
         },
 
-        // Redis GET reads the cached value for this key.
+        // Redis GET reads the value for the specified key.
         "GET %s",
+
+        // Redis key to retrieve.
         key.c_str()
     );
 }
-
