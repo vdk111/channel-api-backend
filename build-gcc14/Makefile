@@ -177,29 +177,53 @@ src/main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/channel_backup.dir/build.make CMakeFiles/channel_backup.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
-src/services/ChannelService.o: src/services/ChannelService.cpp.o
-.PHONY : src/services/ChannelService.o
+src/services/ChannelCommandService.o: src/services/ChannelCommandService.cpp.o
+.PHONY : src/services/ChannelCommandService.o
 
 # target to build an object file
-src/services/ChannelService.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/channel_backup.dir/build.make CMakeFiles/channel_backup.dir/src/services/ChannelService.cpp.o
-.PHONY : src/services/ChannelService.cpp.o
+src/services/ChannelCommandService.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/channel_backup.dir/build.make CMakeFiles/channel_backup.dir/src/services/ChannelCommandService.cpp.o
+.PHONY : src/services/ChannelCommandService.cpp.o
 
-src/services/ChannelService.i: src/services/ChannelService.cpp.i
-.PHONY : src/services/ChannelService.i
+src/services/ChannelCommandService.i: src/services/ChannelCommandService.cpp.i
+.PHONY : src/services/ChannelCommandService.i
 
 # target to preprocess a source file
-src/services/ChannelService.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/channel_backup.dir/build.make CMakeFiles/channel_backup.dir/src/services/ChannelService.cpp.i
-.PHONY : src/services/ChannelService.cpp.i
+src/services/ChannelCommandService.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/channel_backup.dir/build.make CMakeFiles/channel_backup.dir/src/services/ChannelCommandService.cpp.i
+.PHONY : src/services/ChannelCommandService.cpp.i
 
-src/services/ChannelService.s: src/services/ChannelService.cpp.s
-.PHONY : src/services/ChannelService.s
+src/services/ChannelCommandService.s: src/services/ChannelCommandService.cpp.s
+.PHONY : src/services/ChannelCommandService.s
 
 # target to generate assembly for a file
-src/services/ChannelService.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/channel_backup.dir/build.make CMakeFiles/channel_backup.dir/src/services/ChannelService.cpp.s
-.PHONY : src/services/ChannelService.cpp.s
+src/services/ChannelCommandService.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/channel_backup.dir/build.make CMakeFiles/channel_backup.dir/src/services/ChannelCommandService.cpp.s
+.PHONY : src/services/ChannelCommandService.cpp.s
+
+src/services/ChannelQueryService.o: src/services/ChannelQueryService.cpp.o
+.PHONY : src/services/ChannelQueryService.o
+
+# target to build an object file
+src/services/ChannelQueryService.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/channel_backup.dir/build.make CMakeFiles/channel_backup.dir/src/services/ChannelQueryService.cpp.o
+.PHONY : src/services/ChannelQueryService.cpp.o
+
+src/services/ChannelQueryService.i: src/services/ChannelQueryService.cpp.i
+.PHONY : src/services/ChannelQueryService.i
+
+# target to preprocess a source file
+src/services/ChannelQueryService.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/channel_backup.dir/build.make CMakeFiles/channel_backup.dir/src/services/ChannelQueryService.cpp.i
+.PHONY : src/services/ChannelQueryService.cpp.i
+
+src/services/ChannelQueryService.s: src/services/ChannelQueryService.cpp.s
+.PHONY : src/services/ChannelQueryService.s
+
+# target to generate assembly for a file
+src/services/ChannelQueryService.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/channel_backup.dir/build.make CMakeFiles/channel_backup.dir/src/services/ChannelQueryService.cpp.s
+.PHONY : src/services/ChannelQueryService.cpp.s
 
 # Help Target
 help:
@@ -216,9 +240,12 @@ help:
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
-	@echo "... src/services/ChannelService.o"
-	@echo "... src/services/ChannelService.i"
-	@echo "... src/services/ChannelService.s"
+	@echo "... src/services/ChannelCommandService.o"
+	@echo "... src/services/ChannelCommandService.i"
+	@echo "... src/services/ChannelCommandService.s"
+	@echo "... src/services/ChannelQueryService.o"
+	@echo "... src/services/ChannelQueryService.i"
+	@echo "... src/services/ChannelQueryService.s"
 .PHONY : help
 
 

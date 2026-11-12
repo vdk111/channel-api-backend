@@ -100,32 +100,48 @@ CMakeFiles/channel_backup.dir/src/controllers/ChannelController.cpp.s: cmake_for
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/channel_backup.dir/src/controllers/ChannelController.cpp.s"
 	/opt/rh/gcc-toolset-14/root/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/vinayak/workspace/project/channel-github-upload/src/controllers/ChannelController.cpp -o CMakeFiles/channel_backup.dir/src/controllers/ChannelController.cpp.s
 
-CMakeFiles/channel_backup.dir/src/services/ChannelService.cpp.o: CMakeFiles/channel_backup.dir/flags.make
-CMakeFiles/channel_backup.dir/src/services/ChannelService.cpp.o: /home/vinayak/workspace/project/channel-github-upload/src/services/ChannelService.cpp
-CMakeFiles/channel_backup.dir/src/services/ChannelService.cpp.o: CMakeFiles/channel_backup.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/vinayak/workspace/project/channel-github-upload/build-gcc14/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/channel_backup.dir/src/services/ChannelService.cpp.o"
-	/opt/rh/gcc-toolset-14/root/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/channel_backup.dir/src/services/ChannelService.cpp.o -MF CMakeFiles/channel_backup.dir/src/services/ChannelService.cpp.o.d -o CMakeFiles/channel_backup.dir/src/services/ChannelService.cpp.o -c /home/vinayak/workspace/project/channel-github-upload/src/services/ChannelService.cpp
+CMakeFiles/channel_backup.dir/src/services/ChannelCommandService.cpp.o: CMakeFiles/channel_backup.dir/flags.make
+CMakeFiles/channel_backup.dir/src/services/ChannelCommandService.cpp.o: /home/vinayak/workspace/project/channel-github-upload/src/services/ChannelCommandService.cpp
+CMakeFiles/channel_backup.dir/src/services/ChannelCommandService.cpp.o: CMakeFiles/channel_backup.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/vinayak/workspace/project/channel-github-upload/build-gcc14/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/channel_backup.dir/src/services/ChannelCommandService.cpp.o"
+	/opt/rh/gcc-toolset-14/root/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/channel_backup.dir/src/services/ChannelCommandService.cpp.o -MF CMakeFiles/channel_backup.dir/src/services/ChannelCommandService.cpp.o.d -o CMakeFiles/channel_backup.dir/src/services/ChannelCommandService.cpp.o -c /home/vinayak/workspace/project/channel-github-upload/src/services/ChannelCommandService.cpp
 
-CMakeFiles/channel_backup.dir/src/services/ChannelService.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/channel_backup.dir/src/services/ChannelService.cpp.i"
-	/opt/rh/gcc-toolset-14/root/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/vinayak/workspace/project/channel-github-upload/src/services/ChannelService.cpp > CMakeFiles/channel_backup.dir/src/services/ChannelService.cpp.i
+CMakeFiles/channel_backup.dir/src/services/ChannelCommandService.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/channel_backup.dir/src/services/ChannelCommandService.cpp.i"
+	/opt/rh/gcc-toolset-14/root/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/vinayak/workspace/project/channel-github-upload/src/services/ChannelCommandService.cpp > CMakeFiles/channel_backup.dir/src/services/ChannelCommandService.cpp.i
 
-CMakeFiles/channel_backup.dir/src/services/ChannelService.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/channel_backup.dir/src/services/ChannelService.cpp.s"
-	/opt/rh/gcc-toolset-14/root/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/vinayak/workspace/project/channel-github-upload/src/services/ChannelService.cpp -o CMakeFiles/channel_backup.dir/src/services/ChannelService.cpp.s
+CMakeFiles/channel_backup.dir/src/services/ChannelCommandService.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/channel_backup.dir/src/services/ChannelCommandService.cpp.s"
+	/opt/rh/gcc-toolset-14/root/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/vinayak/workspace/project/channel-github-upload/src/services/ChannelCommandService.cpp -o CMakeFiles/channel_backup.dir/src/services/ChannelCommandService.cpp.s
+
+CMakeFiles/channel_backup.dir/src/services/ChannelQueryService.cpp.o: CMakeFiles/channel_backup.dir/flags.make
+CMakeFiles/channel_backup.dir/src/services/ChannelQueryService.cpp.o: /home/vinayak/workspace/project/channel-github-upload/src/services/ChannelQueryService.cpp
+CMakeFiles/channel_backup.dir/src/services/ChannelQueryService.cpp.o: CMakeFiles/channel_backup.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/vinayak/workspace/project/channel-github-upload/build-gcc14/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/channel_backup.dir/src/services/ChannelQueryService.cpp.o"
+	/opt/rh/gcc-toolset-14/root/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/channel_backup.dir/src/services/ChannelQueryService.cpp.o -MF CMakeFiles/channel_backup.dir/src/services/ChannelQueryService.cpp.o.d -o CMakeFiles/channel_backup.dir/src/services/ChannelQueryService.cpp.o -c /home/vinayak/workspace/project/channel-github-upload/src/services/ChannelQueryService.cpp
+
+CMakeFiles/channel_backup.dir/src/services/ChannelQueryService.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/channel_backup.dir/src/services/ChannelQueryService.cpp.i"
+	/opt/rh/gcc-toolset-14/root/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/vinayak/workspace/project/channel-github-upload/src/services/ChannelQueryService.cpp > CMakeFiles/channel_backup.dir/src/services/ChannelQueryService.cpp.i
+
+CMakeFiles/channel_backup.dir/src/services/ChannelQueryService.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/channel_backup.dir/src/services/ChannelQueryService.cpp.s"
+	/opt/rh/gcc-toolset-14/root/usr/bin/g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/vinayak/workspace/project/channel-github-upload/src/services/ChannelQueryService.cpp -o CMakeFiles/channel_backup.dir/src/services/ChannelQueryService.cpp.s
 
 # Object files for target channel_backup
 channel_backup_OBJECTS = \
 "CMakeFiles/channel_backup.dir/src/main.cpp.o" \
 "CMakeFiles/channel_backup.dir/src/controllers/ChannelController.cpp.o" \
-"CMakeFiles/channel_backup.dir/src/services/ChannelService.cpp.o"
+"CMakeFiles/channel_backup.dir/src/services/ChannelCommandService.cpp.o" \
+"CMakeFiles/channel_backup.dir/src/services/ChannelQueryService.cpp.o"
 
 # External object files for target channel_backup
 channel_backup_EXTERNAL_OBJECTS =
 
 channel_backup: CMakeFiles/channel_backup.dir/src/main.cpp.o
 channel_backup: CMakeFiles/channel_backup.dir/src/controllers/ChannelController.cpp.o
-channel_backup: CMakeFiles/channel_backup.dir/src/services/ChannelService.cpp.o
+channel_backup: CMakeFiles/channel_backup.dir/src/services/ChannelCommandService.cpp.o
+channel_backup: CMakeFiles/channel_backup.dir/src/services/ChannelQueryService.cpp.o
 channel_backup: CMakeFiles/channel_backup.dir/build.make
 channel_backup: CMakeFiles/channel_backup.dir/compiler_depend.ts
 channel_backup: /home/vinayak/workspace/drogon-pg-install/lib64/libdrogon.a
@@ -139,7 +155,7 @@ channel_backup: /usr/lib64/libpq.so
 channel_backup: /usr/lib64/libhiredis.so
 channel_backup: /usr/lib64/libz.so
 channel_backup: CMakeFiles/channel_backup.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/vinayak/workspace/project/channel-github-upload/build-gcc14/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Linking CXX executable channel_backup"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/vinayak/workspace/project/channel-github-upload/build-gcc14/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable channel_backup"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/channel_backup.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

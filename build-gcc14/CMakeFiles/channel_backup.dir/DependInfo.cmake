@@ -10,7 +10,8 @@ set(CMAKE_DEPENDS_LANGUAGES
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/vinayak/workspace/project/channel-github-upload/src/controllers/ChannelController.cpp" "CMakeFiles/channel_backup.dir/src/controllers/ChannelController.cpp.o" "gcc" "CMakeFiles/channel_backup.dir/src/controllers/ChannelController.cpp.o.d"
   "/home/vinayak/workspace/project/channel-github-upload/src/main.cpp" "CMakeFiles/channel_backup.dir/src/main.cpp.o" "gcc" "CMakeFiles/channel_backup.dir/src/main.cpp.o.d"
-  "/home/vinayak/workspace/project/channel-github-upload/src/services/ChannelService.cpp" "CMakeFiles/channel_backup.dir/src/services/ChannelService.cpp.o" "gcc" "CMakeFiles/channel_backup.dir/src/services/ChannelService.cpp.o.d"
+  "/home/vinayak/workspace/project/channel-github-upload/src/services/ChannelCommandService.cpp" "CMakeFiles/channel_backup.dir/src/services/ChannelCommandService.cpp.o" "gcc" "CMakeFiles/channel_backup.dir/src/services/ChannelCommandService.cpp.o.d"
+  "/home/vinayak/workspace/project/channel-github-upload/src/services/ChannelQueryService.cpp" "CMakeFiles/channel_backup.dir/src/services/ChannelQueryService.cpp.o" "gcc" "CMakeFiles/channel_backup.dir/src/services/ChannelQueryService.cpp.o.d"
   "" "channel_backup" "gcc" "CMakeFiles/channel_backup.dir/link.d"
   )
 

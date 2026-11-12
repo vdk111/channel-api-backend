@@ -85,12 +85,12 @@ clean: CMakeFiles/channel_backup.dir/clean
 CMakeFiles/channel_backup.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/channel_backup.dir/build.make CMakeFiles/channel_backup.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/channel_backup.dir/build.make CMakeFiles/channel_backup.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/vinayak/workspace/project/channel-github-upload/build-gcc14/CMakeFiles --progress-num=1,2,3,4 "Built target channel_backup"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/vinayak/workspace/project/channel-github-upload/build-gcc14/CMakeFiles --progress-num=1,2,3,4,5 "Built target channel_backup"
 .PHONY : CMakeFiles/channel_backup.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/channel_backup.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/vinayak/workspace/project/channel-github-upload/build-gcc14/CMakeFiles 4
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/vinayak/workspace/project/channel-github-upload/build-gcc14/CMakeFiles 5
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/channel_backup.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/vinayak/workspace/project/channel-github-upload/build-gcc14/CMakeFiles 0
 .PHONY : CMakeFiles/channel_backup.dir/rule
@@ -102,7 +102,7 @@ channel_backup: CMakeFiles/channel_backup.dir/rule
 # codegen rule for target.
 CMakeFiles/channel_backup.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/channel_backup.dir/build.make CMakeFiles/channel_backup.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/vinayak/workspace/project/channel-github-upload/build-gcc14/CMakeFiles --progress-num=1,2,3,4 "Finished codegen for target channel_backup"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/vinayak/workspace/project/channel-github-upload/build-gcc14/CMakeFiles --progress-num=1,2,3,4,5 "Finished codegen for target channel_backup"
 .PHONY : CMakeFiles/channel_backup.dir/codegen
 
 # clean rule for target.
